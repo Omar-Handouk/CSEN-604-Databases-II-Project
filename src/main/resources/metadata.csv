@@ -1,0 +1,38 @@
+Table Name, Column Name, Column Type, ClusteringKey, Indexed, min, max
+CityShop, ID, java.lang.Integer, True, False,0,10000
+CityShop, Name, java.lang.String, False, False, “A”, “ZZZZZZZZZZZ”
+CityShop, X, java.lang.Double, False, True, 0,1000000
+CityShop, Y, java.lang.Double, False, True, 0,1000000
+CityShop, Z, java.lang.Double, False, True, 0,1000000
+CityShop, Specialization, java.lang.String, False, True, “A”, “ZZZZZZZZZZZ”
+CityShop, Address, java.lang.String, False, false, “A”, “ZZZZZZZZZZZ”
+test,gpa,java.lang.Double,false,false,0.0,1000000.0
+test,name,java.lang.String,false,false,"a","zzzzzzzzzzzz"
+test,id,java.lang.Integer,false,false,0,1000000
+test,gpa,java.lang.Double,false,false,1.2,1.2
+test,name,java.lang.String,false,false,"BOOOO","BOOOO"
+test,id,java.lang.Integer,true,false,123,123
+dogo,gpa,java.lang.Double,false,false,1.2,1.2
+dogo,name,java.lang.String,false,false,"BOOOO","BOOOO"
+dogo,id,java.lang.Integer,true,false,123,123
+dogo,gpa,java.lang.Double,false,false,1.2,1.2
+dogo,name,java.lang.String,false,false,"BOOOO","BOOOO"
+dogo,id,java.lang.Integer,true,false,123,123
+Test,gpa,java.lang.Double,false,false,0.0,4.0
+Test,name,java.lang.String,false,false,"a","zzzzzzzzzzzzzzzzzzzz"
+Test,id,java.lang.Integer,true,false,0,1000000
+Test,gpa,java.lang.Double,false,false,0.0,4.0
+Test,name,java.lang.String,false,false,"a","zzzzzzzzzzzzzzzzzzzz"
+Test,id,java.lang.Integer,true,false,0,1000000
+Test,gpa,java.lang.Double,false,false,0.0,4.0
+Test,name,java.lang.String,false,false,"a","zzzzzzzzzzzzzzzzzzzz"
+Test,id,java.lang.Integer,true,false,0,1000000
+Test,gpa,java.lang.Double,false,false,0.0,4.0
+Test,name,java.lang.String,false,false,"a","zzzzzzzzzzzzzzzzzzzz"
+Test,id,java.lang.Integer,true,false,0,1000000
+Test,gpa,java.lang.Double,false,false,0.0,4.0
+Test,name,java.lang.String,false,false,"a","zzzzzzzzzzzzzzzzzzzz"
+Test,id,java.lang.Integer,true,false,0,1000000
+Test,gpa,java.lang.Double,false,false,0.0,4.0
+Test,name,java.lang.String,false,false,"a","zzzzzzzzzzzzzzzzzzzz"
+Test,id,java.lang.Integer,true,false,0,1000000
