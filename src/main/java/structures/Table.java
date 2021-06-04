@@ -1,5 +1,6 @@
 package structures;
 
+import base.DBAppException;
 import base.SQLTerm;
 import utilities.ConfigureDB;
 import utilities.MetadataHandler;
@@ -8,8 +9,10 @@ import utilities.SerializationHandler;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -95,7 +98,7 @@ public class Table implements Serializable {
         SerializationHandler.savePage(tableName, page);
     }
 
-    public void update(String clusteringKeyValue, Hashtable<String, Object> tuple) throws Exception {
+    public void update(String clusteringKeyValue, Hashtable<String, Object> tuple) throws DBAppException {
         int[] pagesEnum = null;
         try {
             pagesEnum = getPages();
@@ -119,7 +122,7 @@ public class Table implements Serializable {
         }
 
         if (!found) {
-            throw new Exception("Entry not found");
+            throw new DBAppException("Entry not found");
         }
 
         SerializationHandler.savePage(tableName, page);
@@ -257,7 +260,9 @@ public class Table implements Serializable {
                 return key1.compareTo((String) key2);
             case "java.util.Date":
                 LocalDate date1 = LocalDate.parse(key1);
-                LocalDate date2 = LocalDate.parse((String) key2);
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                String date2Formatted = format.format((Date) key2);
+                LocalDate date2 = LocalDate.parse(date2Formatted);
 
                 return date1.compareTo(date2);
         }
@@ -278,10 +283,7 @@ public class Table implements Serializable {
             case "java.lang.String":
                 return ((String) key1).compareTo((String) key2);
             default: // Dates
-                LocalDate date1 = LocalDate.parse((String) key1);
-                LocalDate date2 = LocalDate.parse((String) key2);
-
-                return date1.compareTo(date2);
+                return ((Date) key1).compareTo((Date) key2);
         }
     }
 

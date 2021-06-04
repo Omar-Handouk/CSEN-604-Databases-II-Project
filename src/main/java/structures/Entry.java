@@ -2,6 +2,7 @@ package structures;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.Hashtable;
 
 public class Entry implements Serializable, Comparable<Entry> {
@@ -56,19 +57,41 @@ public class Entry implements Serializable, Comparable<Entry> {
             case "java.lang.String":
                 return ((String) this.key).compareTo((String) entry.key);
             case "java.util.Date":
-                LocalDate date1 = LocalDate.parse((String) this.key);
-                LocalDate date2 = LocalDate.parse((String) entry.key);
-
-                return date1.compareTo(date2);
+                return ((Date) this.key).compareTo((Date) entry.key);
         }
         return 0;
     }
 
     @Override
     public String toString() {
-        return "Entry{" +
+
+        StringBuilder out = new StringBuilder();
+
+        out.append("Entry{" +
                 "keyType='" + keyType + '\'' +
-                ", key=" + key +
-                '}';
+                ", key=" + key);
+
+        for (String key : data.keySet()) {
+            out.append(", ").append(key).append("=");
+
+            Object value = data.get(key);
+            if (value.getClass() == Integer.class) {
+                out.append((int) value);
+            } else if (value.getClass() == Long.class) {
+                out.append((long) value);
+            } else if (value.getClass() == Double.class) {
+                out.append((double) value);
+            } else if (value.getClass() == Boolean.class) {
+                out.append((boolean) value);
+            } else if (value.getClass() == String.class) {
+                out.append((String) value);
+            } else if (value.getClass() == Date.class) {
+                out.append((Date) value);
+            }
+        }
+
+        out.append('}');
+
+        return out.toString();
     }
 }

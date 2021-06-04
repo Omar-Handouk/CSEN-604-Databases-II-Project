@@ -1,5 +1,8 @@
+import base.DBAppException;
 import base.SQLTerm;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Hashtable;
 
 public class Main {
@@ -9,7 +12,7 @@ public class Main {
 
         Hashtable<String, Object> hashtable = new Hashtable<>();
 
-        int phase = 4; // 0-Create Table, 1-Insertions, 2-Update, 3-Delete
+        int phase = 5; // 0-Create Table, 1-Insertions, 2-Update, 3-Delete
 
         if (phase == 0) {
             String tableName = "Test";
@@ -94,5 +97,7 @@ public class Main {
                 e.printStackTrace();
             }
         }
+
+
     }
 }

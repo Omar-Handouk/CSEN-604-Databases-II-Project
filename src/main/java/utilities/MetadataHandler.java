@@ -26,11 +26,17 @@ public class MetadataHandler {
         try {
             sc = new Scanner(new File(metadataPath));
 
-            sc.nextLine(); // Dispose of CSV header
-
             while (sc.hasNext()) {
-                String[] split = sc.nextLine().split(",");
-                for (int i = 0; i < split.length; ++i) split[i] = split[i].trim().replace("\"", "");
+                String line = sc.nextLine();
+
+                // Used to check if the first line of the metadata file is a header, if it is dispose of it, some modifications to text is done to ensure that the strings matches in the comparison
+                String modifiedLine = line.toLowerCase().trim().replaceAll("\"", "").replaceAll(" ", "");
+                if (modifiedLine.contains("tablename") && modifiedLine.contains("columnname")) {
+                    continue;
+                }
+
+                String[] split = line.split(",");
+                for (int i = 0; i < split.length; ++i) split[i] = split[i].trim().replaceAll("\"", ""); // The replace is just in-case values are like this "tableName" instead of tableName
 
                 String tableName = split[0];
 
@@ -52,6 +58,7 @@ public class MetadataHandler {
                 data.put("max", colMax);
 
                 tableMetadata.put(colName, data);
+                metadata.put(tableName, tableMetadata);
             }
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -69,10 +76,16 @@ public class MetadataHandler {
         try {
             sc = new Scanner(new File(metadataPath));
 
-            sc.nextLine(); // Dispose of CSV header
-
             while (sc.hasNext()) {
-                String[] split = sc.nextLine().split(",");
+                String line = sc.nextLine();
+
+                // Used to check if the first line of the metadata file is a header, if it is dispose of it, some modifications to text is done to ensure that the strings matches in the comparison
+                String modifiedLine = line.toLowerCase().trim().replaceAll("\"", "").replaceAll(" ", "");
+                if (modifiedLine.contains("tablename") && modifiedLine.contains("columnname")) {
+                    continue;
+                }
+
+                String[] split = line.split(",");
                 String tableName = split[0].trim();
 
                 if (!existing.contains(tableName)) {
@@ -136,5 +149,9 @@ public class MetadataHandler {
                 exception.printStackTrace();
             }
         }
+    }
+
+    public static void main(String[] args) {
+        MetadataHandler.parseCSV();
     }
 }

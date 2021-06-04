@@ -1,3 +1,4 @@
+import base.DBAppException;
 import base.SQLTerm;
 
 import java.util.Hashtable;

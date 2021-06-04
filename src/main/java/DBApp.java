@@ -1,10 +1,12 @@
+import base.DBAppException;
 import base.SQLTerm;
 import structures.Entry;
+import structures.Index;
 import structures.Table;
 import utilities.MetadataHandler;
 import utilities.SerializationHandler;
 
-import java.io.FileNotFoundException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class DBApp implements DBAppInterface{
@@ -20,7 +22,9 @@ public class DBApp implements DBAppInterface{
 
     @Override
     public void createIndex(String tableName, String[] columnNames) throws DBAppException {
+        Hashtable<String, Hashtable> tableMetadata = MetadataHandler.parseCSV().get(tableName);
 
+        new Index(tableMetadata, tableName, columnNames);
     }
 
     @Override
@@ -36,7 +40,7 @@ public class DBApp implements DBAppInterface{
             Hashtable<String, Hashtable> tableMeta = MetadataHandler.parseCSV().get(tableName);
             table.setMetadata(tableMeta);
             table.insert(colNameValue);
-        } catch (FileNotFoundException e) {
+        } catch (DBAppException e) {
             e.printStackTrace();
         }
     }
@@ -48,8 +52,8 @@ public class DBApp implements DBAppInterface{
             Hashtable<String, Hashtable> tableMeta = MetadataHandler.parseCSV().get(tableName);
             table.setMetadata(tableMeta);
             table.update(clusteringKeyValue, columnNameValue);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (DBAppException e) {
+            throw e;
         }
     }
 
@@ -60,7 +64,7 @@ public class DBApp implements DBAppInterface{
             Hashtable<String, Hashtable> tableMeta = MetadataHandler.parseCSV().get(tableName);
             table.setMetadata(tableMeta);
             table.delete(columnNameValue);
-        } catch (FileNotFoundException e) {
+        } catch (DBAppException e) {
             e.printStackTrace();
         }
     }
@@ -79,12 +83,29 @@ public class DBApp implements DBAppInterface{
             for (SQLTerm query : sqlTerms) {
                 results.add(table.select(query));
             }
-        } catch (FileNotFoundException e) {
+        } catch (DBAppException e) {
             e.printStackTrace();
         }
 
-        
-
         return null;
+    }
+
+    public Hashtable<String, Object> changeDataToDateString(Hashtable<String, Hashtable> metadata,
+                                                            Hashtable<String, Object> data) {
+        for (String str : data.keySet()) {
+            String colType = (String) metadata.get(str).get("type");
+
+            if (data.get(str).getClass() == Date.class) {
+                data.put(str, parseDateToString((Date) data.get(str)));
+            }
+        }
+
+        return data;
+    }
+
+    public static String parseDateToString(Date date) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+
+        return format.format(date);
     }
 }
