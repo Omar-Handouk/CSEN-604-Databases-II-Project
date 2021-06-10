@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Objects;
 
 public class Entry implements Serializable, Comparable<Entry> {
     private static final long serialVersionUID = 50776575695888995L;
@@ -93,5 +94,23 @@ public class Entry implements Serializable, Comparable<Entry> {
         out.append('}');
 
         return out.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entry entry = (Entry) o;
+        return keyType.equals(entry.keyType) && key.equals(entry.key) && data.equals(entry.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(keyType, key, data);
+    }
+
+    @Override
+    protected Object clone() {
+        return new Entry(keyType, key, (Hashtable<String, Object>) data.clone());
     }
 }

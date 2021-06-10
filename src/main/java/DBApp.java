@@ -87,7 +87,35 @@ public class DBApp implements DBAppInterface{
             e.printStackTrace();
         }
 
-        return null;
+        assert arrayOperators != null;
+        for (String operator : arrayOperators) {
+            while (results.size() > 1) {
+                Set<Entry> s1 = new HashSet<>(results.remove());
+                Set<Entry> s2 = new HashSet<>(results.remove());
+
+                switch (operator) {
+                    case "AND":
+                        s1.retainAll(s2);
+                        results.add(new Vector<>(s1));
+                        break;
+                    case "OR":
+                        s1.addAll(s2);
+                        results.add(new Vector<>(s1));
+                        break;
+                    case "XOR":
+                        Set<Entry> s3 = new HashSet<>();
+                        s3.addAll(s1);
+                        s3.addAll(s2); // Union of two sets
+
+                        s1.retainAll(s2); // Intersection of two sets
+
+                        s3.removeAll(s1); // Remove intersection from union
+                        results.add(new Vector<>(s3));
+                        break;
+                }
+            }
+        }
+        return results.remove().iterator();
     }
 
     public Hashtable<String, Object> changeDataToDateString(Hashtable<String, Hashtable> metadata,

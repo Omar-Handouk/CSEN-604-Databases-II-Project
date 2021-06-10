@@ -1,5 +1,7 @@
 package structures;
 
+import base.DBAppException;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Hashtable;
@@ -9,19 +11,18 @@ public class Page implements Serializable {
     private static final long serialVersionUID = -1400001927648513731L;
 
     private final int pageNumber;
-
     private final String clusterKey;
     private final String clusterKeyType;
-
     private final int pageMaxLength;
-
+    private final String tableName;
     private final Vector<Entry> page;
 
-    public Page(String clusterKey, String clusterKeyType, int pageMaxLength, int pageNumber) {
+    public Page(String clusterKey, String clusterKeyType, int pageMaxLength, int pageNumber, String tableName) {
         this.clusterKey = clusterKey;
         this.clusterKeyType = clusterKeyType;
         this.pageMaxLength = pageMaxLength;
         this.pageNumber = pageNumber;
+        this.tableName = tableName;
 
         page = new Vector<>(pageMaxLength);
 
@@ -31,10 +32,32 @@ public class Page implements Serializable {
         Entry entry = new Entry(clusterKeyType, tuple.get(clusterKey), tuple);
         page.add(entry);
         Collections.sort(page);
+
+        int index = -1;
+        for (int i = 0; i < page.size(); i++) {
+            if (page.get(i).equals(entry)) {
+                index = i;
+                break;
+            }
+        }
+
+        if (index != -1) {
+            BucketTuple bucketTuple = new BucketTuple(pageNumber, index);
+
+            Index[] indices = Index.getIndices(tableName);
+            for (Index i : indices) {
+                try {
+                    i.indexOperation(IndexOperation.INSERT, entry, bucketTuple);
+                } catch (DBAppException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     public void update(int entryIdx, Hashtable<String, Object> tuple) {
         Entry entry = page.get(entryIdx);
+        Entry beforeMod = (Entry) entry.clone();
 
         Hashtable<String, Object> data = entry.getData();
 
@@ -43,6 +66,17 @@ public class Page implements Serializable {
         }
 
         entry.setData(data);
+
+        BucketTuple bucketTuple = new BucketTuple(pageNumber, entryIdx);
+
+        Index[] indices = Index.getIndices(tableName);
+        for (Index i : indices) {
+            try {
+                i.indexOperation(IndexOperation.UPDATE, beforeMod, entry, bucketTuple, bucketTuple);
+            } catch (DBAppException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void delete(Hashtable<String, Hashtable> metadata, Hashtable<String, Object> colValues) {
@@ -64,6 +98,27 @@ public class Page implements Serializable {
         }
 
         for (Entry entry : removables) {
+            int index = -1;
+            for (int i = 0; i < page.size(); i++) {
+                if (page.get(i).equals(entry)) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index != -1) {
+                BucketTuple bucketTuple = new BucketTuple(pageNumber, index);
+
+                Index[] indices = Index.getIndices(tableName);
+                for (Index i : indices) {
+                    try {
+                        i.indexOperation(IndexOperation.DELETE, entry, bucketTuple);
+                    } catch (DBAppException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
             page.remove(entry);
         }
     }

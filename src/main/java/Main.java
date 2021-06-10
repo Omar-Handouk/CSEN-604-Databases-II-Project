@@ -12,10 +12,10 @@ public class Main {
 
         Hashtable<String, Object> hashtable = new Hashtable<>();
 
-        int phase = 5; // 0-Create Table, 1-Insertions, 2-Update, 3-Delete
+        int phase = 4; // 0-Create Table, 1-Insertions, 2-Update, 3-Delete
 
         if (phase == 0) {
-            String tableName = "Test";
+            String tableName = "students";
             String clusteringKey = "id";
 
             Hashtable<String, String> colType = new Hashtable<>();
@@ -40,28 +40,31 @@ public class Main {
             }
         } else if (phase == 1) {
             try {
-                hashtable.put("id", 1);
-                hashtable.put("name", "Test Name 1");
+                hashtable.put("id", "43-1111");
+                hashtable.put("first_name", "zazaza");
                 hashtable.put("gpa", 0.1);
-                dbApp.insertIntoTable("Test", hashtable);
-
+                hashtable.put("dob", new Date(1997 - 1900, 4, 1));
+                dbApp.insertIntoTable("students", hashtable);
+                boolean a = true;
+                if (a)
+                    return;
                 hashtable.clear();
                 hashtable.put("id", 2);
                 hashtable.put("name", "Test Name 2");
                 hashtable.put("gpa", 0.2);
-                dbApp.insertIntoTable("Test", hashtable);
+                dbApp.insertIntoTable("students", hashtable);
 
                 hashtable.clear();
                 hashtable.put("id", 3);
                 hashtable.put("name", "Test Name 3");
                 hashtable.put("gpa", 0.3);
-                dbApp.insertIntoTable("Test", hashtable);
+                dbApp.insertIntoTable("students", hashtable);
 
                 hashtable.clear();
                 hashtable.put("id", 4);
                 hashtable.put("name", "jacob");
                 hashtable.put("gpa", 0.4);
-                dbApp.insertIntoTable("Test", hashtable);
+                dbApp.insertIntoTable("students", hashtable);
 
             } catch (DBAppException e) {
                 e.printStackTrace();
@@ -69,10 +72,10 @@ public class Main {
         } else if (phase == 2) {
             try {
 
-                hashtable.put("name", "Test Name Changed #2");
+                hashtable.put("first_name", "gggggg");
                 hashtable.put("gpa", 4.5);
 
-                dbApp.updateTable("Test", "3", hashtable);
+                dbApp.updateTable("students", "40-3457", hashtable);
             } catch (DBAppException e) {
                 e.printStackTrace();
             }
@@ -88,16 +91,16 @@ public class Main {
             SQLTerm[] arrSQLTerms;
             arrSQLTerms = new SQLTerm[2];
 
-            arrSQLTerms[0] = new SQLTerm("Test", "name", "=", "Test Name 1");
-            arrSQLTerms[1] = new SQLTerm("Test", "gpa", "=", 0.1);
+            arrSQLTerms[1] = new SQLTerm("students", "gpa", "=", 4.5);
+            arrSQLTerms[0] = new SQLTerm("students", "first_name", "=", "gggggg");
+
+            String[] ops = new String[] {"XOR"};
 
             try {
-                dbApp.selectFromTable(arrSQLTerms, null);
+                dbApp.selectFromTable(arrSQLTerms, ops);
             } catch (DBAppException e) {
                 e.printStackTrace();
             }
         }
-
-
     }
 }

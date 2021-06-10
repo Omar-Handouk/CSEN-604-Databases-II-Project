@@ -56,15 +56,10 @@ public class SerializationHandler {
         String tableDir = DATAPATH + "/" + tableName;
 
         StringBuilder indexName = new StringBuilder();
-        boolean first = true;
-        for (String col : index.getColNames()) {
-            if (first) {
-                first = false;
-            } else {
-                indexName.append('-');
-            }
+        indexName.append("Index");
 
-            indexName.append(col);
+        for (String col : index.getColNames()) {
+            indexName.append('-').append(col);
         }
 
         indexName.append(".class");
@@ -136,15 +131,10 @@ public class SerializationHandler {
         String tableDir = DATAPATH + "/" + tableName;
 
         StringBuilder indexName = new StringBuilder();
-        boolean first = true;
-        for (String col : cols) {
-            if (first) {
-                first = false;
-            } else {
-                indexName.append('-');
-            }
+        indexName.append("Index-");
 
-            indexName.append(col);
+        for (String col : cols) {
+            indexName.append('-').append(col);
         }
 
         indexName.append(".class");
@@ -185,15 +175,10 @@ public class SerializationHandler {
         String tableDir = DATAPATH + "/" + tableName;
 
         StringBuilder indexName = new StringBuilder();
-        boolean first = true;
-        for (String col : cols) {
-            if (first) {
-                first = false;
-            } else {
-                indexName.append('-');
-            }
+        indexName.append("Index-");
 
-            indexName.append(col);
+        for (String col : cols) {
+            indexName.append('-').append(col);
         }
 
         indexName.append(".class");

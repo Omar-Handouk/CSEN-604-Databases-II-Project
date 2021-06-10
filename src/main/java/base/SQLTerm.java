@@ -5,10 +5,12 @@ import java.util.Hashtable;
 public class SQLTerm {
     public static final String[] OPERATORS = {">", ">=", "<", "<=", "=", "!="};
 
-    private String _strTableName;
-    private String _strColumnName;
-    private String _strOperator;
-    private Object _objValue;
+    public String _strTableName;
+    public String _strColumnName;
+    public String _strOperator;
+    public Object _objValue;
+
+    public SQLTerm() {}
 
     public SQLTerm(String _strTableName, String _strColumnName, String _strOperator, Object _objValue) {
         this._strTableName = _strTableName;

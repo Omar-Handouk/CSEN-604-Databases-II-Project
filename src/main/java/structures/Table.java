@@ -72,7 +72,7 @@ public class Table implements Serializable {
         Page page;
 
         if (pagesEnum.length == 0) {
-            page = new Page(clusterKey, clusterKeyType, pageLength, 0);
+            page = new Page(clusterKey, clusterKeyType, pageLength, 0, tableName);
         } else {
             page = null;
 
@@ -89,7 +89,7 @@ public class Table implements Serializable {
 
             if (page == null) { // If no empty pages
                 int pageNumber = getFirstAvailablePageNumber(pagesEnum);
-                page = new Page(clusterKey, clusterKeyType, pageLength, pageNumber);
+                page = new Page(clusterKey, clusterKeyType, pageLength, pageNumber, tableName);
             }
 
         }
@@ -193,7 +193,7 @@ public class Table implements Serializable {
         Vector<Integer> pages = new Vector<>();
 
         for (String fileName : fileNames) {
-            if (fileName.contains(tableName)) {
+            if (fileName.contains(tableName) || fileName.contains("Index")) {
                 continue;
             }
 

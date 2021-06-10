@@ -1,27 +1,27 @@
 package structures;
 
 import base.DBAppException;
-import mikera.randomz.Hash;
 import utilities.SerializationHandler;
 
-import java.io.FileNotFoundException;
-import java.io.Serializable;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Vector;
 
 public class Index implements Serializable {
 
-    private static final long serialVersionUID = 5290445587578106696L;
     transient public static final int INTERVALS = 10;
+    private static final long serialVersionUID = 5290445587578106696L;
 
-    private Hashtable<String, Hashtable> tableMetadata;
-    private Hashtable<String, Vector<Long>> rangeTable;
-    private String tableName;
-    private String[] colNames;
+    private final Hashtable<String, Hashtable> tableMetadata;
+    private final Hashtable<String, Vector<Long>> rangeTable;
+    private final String tableName;
+    private final String[] colNames;
 
-    private Object[] grid;
+    private final Object[] grid;
 
     public Index(Hashtable<String, Hashtable> tableMetadata, String tableName, String[] colNames) {
         rangeTable = new Hashtable<>();
@@ -35,6 +35,58 @@ public class Index implements Serializable {
 
         this.constructIndex();
         SerializationHandler.saveIndex(tableName, this);
+    }
+
+    private void constructRangeTable() {
+        for (String colName : colNames) {
+            Hashtable<String, Object> colMetadata = tableMetadata.get(colName);
+            String colType = (String) colMetadata.get("type");
+
+            Object colMin = colMetadata.get("min");
+            Object colMax = colMetadata.get("max");
+
+            long rangeMin = -1;
+            long rangeMax = -1;
+            long rangeStep = -1;
+
+            if (colType.compareTo("java.lang.Integer") == 0 || colType.compareTo("java.lang.Double") == 0) {
+                // If integer just get the min and max
+                // If double floor the min, ceil the max and get the biggest bound
+                rangeMin = colType.compareTo("java.lang.Integer") == 0 ? (new Integer((int) colMin)).longValue() : (new Double((Math.floor((double) colMin)))).longValue();
+                rangeMax = colType.compareTo("java.lang.Integer") == 0 ? (new Integer((int) colMax)).longValue() : (new Double((Math.ceil((double) colMax)))).longValue();
+
+                rangeStep = step(rangeMin, rangeMax, INTERVALS);
+            } else if (colType.compareTo("java.lang.String") == 0) {
+                rangeMin = stringNumericalValue((String) colMin);
+                rangeMax = stringNumericalValue((String) colMax);
+
+                rangeStep = step(rangeMin, rangeMax, INTERVALS);
+            } else if (colType.compareTo("java.util.Date") == 0) {
+                DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                try {
+                    Date minDate = formatter.parse((String) colMin);
+                    Date maxDate = formatter.parse((String) colMax);
+
+                    rangeMin = dateToSeconds(minDate);
+                    rangeMax = dateToSeconds(maxDate);
+
+                    rangeStep = step(rangeMin, rangeMax, INTERVALS);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            Vector<Long> range = new Vector<>();
+
+            long current = rangeMin;
+            for (int i = 1; i <= INTERVALS && current <= rangeMax; ++i) {
+                range.add(current);
+
+                current += rangeStep;
+            }
+
+            rangeTable.put(colName, range);
+        }
     }
 
     private Object[] constructGrid(int level) {
@@ -77,15 +129,15 @@ public class Index implements Serializable {
     }
 
     public void indexOperation(IndexOperation operation, Entry oldEntry, Entry currentEntry,
-                               BucketTuple oldTuple, BucketTuple currentTuple) {
-        if (operation == IndexOperation.DELETE) {
+                               BucketTuple oldTuple, BucketTuple currentTuple) throws DBAppException {
+        if (operation == IndexOperation.UPDATE) {
             updateInIndex(oldEntry, currentEntry, oldTuple, currentTuple);
         }
 
         SerializationHandler.saveIndex(tableName, this);
     }
 
-    public void indexOperation(IndexOperation operation, Entry entry, BucketTuple tuple) {
+    public void indexOperation(IndexOperation operation, Entry entry, BucketTuple tuple) throws DBAppException {
 
         switch (operation) {
             case INSERT:
@@ -99,16 +151,14 @@ public class Index implements Serializable {
         SerializationHandler.saveIndex(tableName, this);
     }
 
-    public void insertIntoBucket(Entry entry, BucketTuple tuple) {
+    public void insertIntoBucket(Entry entry, BucketTuple tuple) throws DBAppException {
         Hashtable<String, Object> data = entry.getData();
 
         int[] compoundIndexForGrid = getIndex(data);
 
         for (int i = 0; i < compoundIndexForGrid.length; i++) {
             if (compoundIndexForGrid[i] == -1) {
-                System.out.println("Invalid range for insertion");
-                System.out.println(entry);
-                return;
+                throw new DBAppException("Invalid entry can not insert into index, does not comply with min-max range");
             }
         }
 
@@ -125,21 +175,19 @@ public class Index implements Serializable {
         }
     }
 
-    public void updateInIndex(Entry oldEntry, Entry currentEntry, BucketTuple oldTuple, BucketTuple currentTuple) { // oldTuple differs from current tuple in row number
+    public void updateInIndex(Entry oldEntry, Entry currentEntry, BucketTuple oldTuple, BucketTuple currentTuple) throws DBAppException { // oldTuple differs from current tuple in row number
         deleteFromBucket(oldEntry, oldTuple);
         insertIntoBucket(currentEntry, currentTuple);
     }
 
-    public void deleteFromBucket(Entry entry, BucketTuple tuple) {
+    public void deleteFromBucket(Entry entry, BucketTuple tuple) throws DBAppException {
         Hashtable<String, Object> data = entry.getData();
 
         int[] compoundIndexForGrid = getIndex(data);
 
         for (int i = 0; i < compoundIndexForGrid.length; i++) {
             if (compoundIndexForGrid[i] == -1) {
-                System.out.println("Invalid range for insertion");
-                System.out.println(entry);
-                return;
+                throw new DBAppException("Invalid entry can not delete from index, does not comply with min-max range");
             }
         }
 
@@ -168,61 +216,33 @@ public class Index implements Serializable {
         return getBucket(level + 1, idx, tmp[idx[level]]);
     }
 
-    private void constructRangeTable() {
-        for (String colName : colNames) {
-            Hashtable<String, Object> colMetadata = tableMetadata.get(colName);
-            String colType = (String) colMetadata.get("type");
+    private int[] getIndex(Hashtable<String, Object> data) {
+        int[] compoundIndexForGrid = new int[colNames.length];
 
-            Object colMin = colMetadata.get("min");
-            Object colMax = colMetadata.get("max");
+        for (int i = 0; i < colNames.length; i++) {
+            Object value = data.get(colNames[i]);
 
-            long rangeMin = -1;
-            long rangeMax = -1;
-            long rangeStep = -1;
+            // TODO: Problem as double need to be found, dont care enough to fix
+            if (value.getClass() == Integer.class || value.getClass() == Long.class || value.getClass() == Double.class) {
+                long v = value.getClass() == Integer.class ? (new Integer((int) value)).longValue()
+                        : value.getClass() == Double.class ? (new Double((double) value)).longValue()
+                        : (long) value;
 
-            if (colType.compareTo("java.lang.Integer") == 0 || colType.compareTo("java.lang.Double") == 0) {
-                // If integer just get the min and max
-                // If double floor the min, ceil the max and get the biggest bound
-                rangeMin = colType.compareTo("java.lang.Integer") == 0 ? (long) colMin : (long) (Math.floor((double) colMin));
-                rangeMax = colType.compareTo("java.lang.Integer") == 0 ? (long) colMax : (long) (Math.ceil((double) colMax));
-
-                rangeStep = step(rangeMin, rangeMax, INTERVALS);
-            } else if (colType.compareTo("java.lang.String") == 0) {
-                rangeMin = stringNumericalValue((String) colMin);
-                rangeMax = stringNumericalValue((String) colMax);
-
-                rangeStep = step(rangeMin, rangeMax, INTERVALS);
-            } else if (colType.compareTo("java.util.Date") == 0) {
-                DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                try {
-                    Date minDate = formatter.parse((String) colMin);
-                    Date maxDate = formatter.parse((String) colMax);
-
-                    rangeMin = dateToSeconds(minDate);
-                    rangeMax = dateToSeconds(maxDate);
-
-                    rangeStep = step(rangeMin, rangeMax, INTERVALS);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                compoundIndexForGrid[i] = floorSearch(rangeTable.get(colNames[i]), v);
+            } else if (value.getClass() == String.class) {
+                compoundIndexForGrid[i] = floorSearch(rangeTable.get(colNames[i]), stringNumericalValue((String) value));
+            } else if (value.getClass() == Date.class) {
+                compoundIndexForGrid[i] = floorSearch(rangeTable.get(colNames[i]), dateToSeconds((Date) value));
             }
-
-            Vector<Long> range = new Vector<>();
-
-            long current = rangeMin;
-            for (int i = 1; i <= INTERVALS && current <= rangeMax; ++i) {
-                range.add(current);
-
-                current += rangeStep;
-            }
-
-            rangeTable.put(colName, range);
         }
+
+        return compoundIndexForGrid;
     }
 
+
     /*
-    * This method returns the accumulative sum of the ascii value of character of a string,
-    * All strings are converted to lowercase, trimmed, and white spaces are removed
+     * This method returns the accumulative sum of the ascii value of character of a string,
+     * All strings are converted to lowercase, trimmed, and white spaces are removed
      */
     public static long stringNumericalValue(String str) {
         str = str.toLowerCase().trim().replaceAll(" ", "");
@@ -279,23 +299,32 @@ public class Index implements Serializable {
         return -1;
     }
 
-    private int[] getIndex(Hashtable<String, Object> data) {
-        int[] compoundIndexForGrid = new int[colNames.length];
+    public static Index[] getIndices(String tableName) {
+        Vector<Index> indices = new Vector<>();
 
-        for (int i = 0; i < colNames.length; i++) {
-            Object value = data.get(colNames[i]);
+        String indicesPath = "src/main/resources/data/" + tableName;
 
-            // TODO: Problem as double need to be found, dont care enough to fix
-            if (value.getClass() == Integer.class || value.getClass() == Long.class || value.getClass() == Double.class) {
-                compoundIndexForGrid[i] = floorSearch(rangeTable.get(colNames[i]), (long) value);
-            } else if (value.getClass() == String.class) {
-                compoundIndexForGrid[i] = floorSearch(rangeTable.get(colNames[i]), stringNumericalValue((String) value));
-            } else if (value.getClass() == Date.class) {
-                compoundIndexForGrid[i] = floorSearch(rangeTable.get(colNames[i]), dateToSeconds((Date) value));
+        File folder = new File(indicesPath);
+        File[] files = folder.listFiles();
+
+        assert files != null;
+        for (File file : files) {
+            if (file.isFile() && file.getName().contains("Index")) {
+                try {
+                    FileInputStream fileIn = new FileInputStream(file);
+                    ObjectInputStream in = new ObjectInputStream(fileIn);
+
+                    indices.add((Index) in.readObject());
+
+                    fileIn.close();
+                    in.close();
+                } catch (IOException | ClassNotFoundException exception) {
+                    exception.printStackTrace();
+                }
             }
         }
 
-        return compoundIndexForGrid;
+        return indices.toArray(new Index[indices.size()]);
     }
 
     public Hashtable<String, Vector<Long>> getRangeTable() {
